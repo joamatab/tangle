@@ -35,45 +35,48 @@ class Comparison(BaseNode):
         self.compute()
 
     def compute(self, force=False):
-        if self.is_dirty():
-            operation = self.cb_operation.currentText()
-            if self.value_if_true.is_connected() and self.value_if_false.is_connected():
+        if not self.is_dirty():
+            return
+        operation = self.cb_operation.currentText()
+        if self.value_if_true.is_connected() and self.value_if_false.is_connected():
 
-                self.value_if_true.fetch_connected_value()
-                self.value_if_false.fetch_connected_value()
+            self.value_if_true.fetch_connected_value()
+            self.value_if_false.fetch_connected_value()
 
-                if self.input_01.is_connected() and self.input_02.is_connected():
-                    self.input_01.fetch_connected_value()
-                    self.input_02.fetch_connected_value()
+            if self.input_01.is_connected() and self.input_02.is_connected():
+                self.input_01.fetch_connected_value()
+                self.input_02.fetch_connected_value()
 
-                    if not type(self.input_01.socket_type) == type(self.input_02.socket_type):
-                        return
+                if type(self.input_01.socket_type) != type(
+                    self.input_02.socket_type
+                ):
+                    return
 
-                    result = False
+                result = False
 
-                    try:
-                        if operation == "equal to":
-                            result = True if self.input_01.get_value() == self.input_02.get_value() else False
-                        if operation == "not equal to":
-                            result = True if self.input_01.get_value() != self.input_02.get_value() else False
-                        if operation == "bigger than":
-                            result = True if self.input_01.get_value() > self.input_02.get_value() else False
-                        if operation == "smaller than":
-                            result = True if self.input_01.get_value() < self.input_02.get_value() else False
-                    except TypeError as err:
-                        pass
+                try:
+                    if operation == "equal to":
+                        result = self.input_01.get_value() == self.input_02.get_value()
+                    if operation == "not equal to":
+                        result = self.input_01.get_value() != self.input_02.get_value()
+                    if operation == "bigger than":
+                        result = self.input_01.get_value() > self.input_02.get_value()
+                    if operation == "smaller than":
+                        result = self.input_01.get_value() < self.input_02.get_value()
+                except TypeError as err:
+                    pass
 
-                    self.change_title(str(result))
+                self.change_title(str(result))
 
-                    if result:
-                        self.output.change_socket_type(self.value_if_true.socket_type)
-                        self.output.set_value(self.value_if_true.get_value())
-                    else:
-                        self.output.change_socket_type(self.value_if_false.socket_type)
-                        self.output.set_value(self.value_if_false.get_value())
+                if result:
+                    self.output.change_socket_type(self.value_if_true.socket_type)
+                    self.output.set_value(self.value_if_true.get_value())
+                else:
+                    self.output.change_socket_type(self.value_if_false.socket_type)
+                    self.output.set_value(self.value_if_false.get_value())
 
-                    super().compute(force=force)
-                    self.set_dirty(False)
-            else:
-                self.change_title("comparison")
+                super().compute(force=force)
+                self.set_dirty(False)
+        else:
+            self.change_title("comparison")
 

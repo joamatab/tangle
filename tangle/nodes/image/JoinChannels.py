@@ -70,40 +70,46 @@ class JoinChannels(ImageNode):
 
 
     def compute(self, force=False):
-        if self.input_r.is_connected() or self.input_r.is_connected() or self.input_r.is_connected() or self.input_r.is_connected():
-            self.input_r.fetch_connected_value()
-            self.input_g.fetch_connected_value()
-            self.input_b.fetch_connected_value()
-            self.input_a.fetch_connected_value()
+        if (
+            not self.input_r.is_connected()
+            and not self.input_r.is_connected()
+            and not self.input_r.is_connected()
+            and not self.input_r.is_connected()
+        ):
+            return
+        self.input_r.fetch_connected_value()
+        self.input_g.fetch_connected_value()
+        self.input_b.fetch_connected_value()
+        self.input_a.fetch_connected_value()
 
-            channels = [self.input_r.get_value(), self.input_g.get_value(), self.input_b.get_value(),
-                        self.input_a.get_value()]
+        channels = [self.input_r.get_value(), self.input_g.get_value(), self.input_b.get_value(),
+                    self.input_a.get_value()]
 
-            checked_channels = []
+        checked_channels = []
 
-            for channel in channels:
-                if channel is None:
-                    channel = self.black_image.resize(self.get_most_common_size(channels))
+        for channel in channels:
+            if channel is None:
+                channel = self.black_image.resize(self.get_most_common_size(channels))
 
-                checked_channels.append(channel)
+            checked_channels.append(channel)
 
-            try:
-                if self.chk_rgba.isChecked():
-                    combined_image = Image.merge("RGBA", checked_channels)
-                else:
-                    combined_image = Image.merge("RGB", checked_channels[:-1])
-            except ValueError as err:
-                utils.trace(err)
+        try:
+            if self.chk_rgba.isChecked():
+                combined_image = Image.merge("RGBA", checked_channels)
+            else:
+                combined_image = Image.merge("RGB", checked_channels[:-1])
+        except ValueError as err:
+            utils.trace(err)
 
-                if self.chk_rgba.isChecked():
-                    combined_image = Image.merge("RGBA", [self.black_image, self.black_image, self.black_image, self.black_image])
-                else:
-                    combined_image = Image.merge("RGB", [self.black_image, self.black_image, self.black_image])
+            if self.chk_rgba.isChecked():
+                combined_image = Image.merge("RGBA", [self.black_image, self.black_image, self.black_image, self.black_image])
+            else:
+                combined_image = Image.merge("RGB", [self.black_image, self.black_image, self.black_image])
 
-            self.output_image.set_value(combined_image)
-            self.set_pixmap(ImageQt.toqpixmap(combined_image))
-            self.refresh()
-            super().compute(force=force)
-            self.set_dirty(False)
+        self.output_image.set_value(combined_image)
+        self.set_pixmap(ImageQt.toqpixmap(combined_image))
+        self.refresh()
+        super().compute(force=force)
+        self.set_dirty(False)
 
 

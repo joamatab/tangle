@@ -28,9 +28,9 @@ class StockTester(PlotNode):
         # print(data)
         # print(meta_data)
 
-        x_axis_values = list(range(0, 5))
+        x_axis_values = list(range(5))
         y_axis_values = []
-        for _ in range(len(x_axis_values)):
+        for _ in x_axis_values:
             number = random.uniform(0, 100)
             y_axis_values.append(number)
 

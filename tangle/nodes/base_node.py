@@ -72,20 +72,14 @@ class BaseNode(Node):
                 return
 
     def has_icon(self):
-        if not self.get_icon(as_pixmap=False) == "":
-            return True
-        return False
+        return self.get_icon(as_pixmap=False) != ""
 
     def get_icon(self, as_pixmap=True):
-        icon_path = os.path.join(ICONS_PATH, os.path.basename(str(type(self).__name__))) + ".png"
+        icon_path = f"{os.path.join(ICONS_PATH, os.path.basename(str(type(self).__name__)))}.png"
+
         if as_pixmap:
-            if os.path.isfile(icon_path):
-                return QPixmap(icon_path)
-            return QPixmap()
-        else:
-            if os.path.isfile(icon_path):
-                return icon_path
-            return ""
+            return QPixmap(icon_path) if os.path.isfile(icon_path) else QPixmap()
+        return icon_path if os.path.isfile(icon_path) else ""
 
     def refresh(self):
         pass
@@ -113,17 +107,17 @@ class BaseNode(Node):
         return self.__is_dirty
 
     def compute_connected_nodes(self, output_socket=None, force=False):
-        if not self.get_auto_compute_on_connect():
-            if force:
-                if output_socket is None:
-                    for node in self.get_connected_output_nodes():
-                        node.set_dirty(True)
-                        node.compute(force=force)
-                else:
-                    for connected_node in [socket.get_node() for socket in output_socket.get_connected_sockets()]:
-                        connected_node.set_dirty(True)
-                        connected_node.compute(force=force)
-        else:
+        if self.get_auto_compute_on_connect():
+            if output_socket is None:
+                for node in self.get_connected_output_nodes():
+                    node.set_dirty(True)
+                    node.compute(force=force)
+            else:
+                for connected_node in [socket.get_node() for socket in output_socket.get_connected_sockets()]:
+                    connected_node.set_dirty(True)
+                    connected_node.compute(force=force)
+
+        elif force:
             if output_socket is None:
                 for node in self.get_connected_output_nodes():
                     node.set_dirty(True)
@@ -376,8 +370,7 @@ class BaseNode(Node):
         return self.__help_text
 
     def save(self, save_value=True):
-        node_dict = {}
-        node_dict["sockets"] = {}
+        node_dict = {"sockets": {}}
         for socket in self.get_all_sockets():
             node_dict["sockets"][socket.get_uuid(as_string=True)] = socket.save(save_value=save_value)
 
@@ -399,22 +392,14 @@ class BaseNode(Node):
 
     def duplicate(self):
         node_dict = self.save()
-        scene_dict = {}
-        scene_dict["nodes"] = {}
+        scene_dict = {"nodes": {}}
         scene_dict["nodes"][node_dict.get("uuid")] = node_dict
         self.scene.open_network(scene_dict=scene_dict, with_values=True, with_connections=False, is_duplicate=True)
         return node_dict
 
     def load(self, node_dict, is_duplicate=False, x=None, y=None):
-        if x is not None:
-            x_pos = x
-        else:
-            x_pos = node_dict.get("x")
-        if y is not None:
-            y_pos = y
-        else:
-            y_pos = node_dict.get("y")
-
+        x_pos = x if x is not None else node_dict.get("x")
+        y_pos = y if y is not None else node_dict.get("y")
         self.setPos(x_pos, y_pos)
         if is_duplicate:
             self.set_uuid(uuid.uuid4())

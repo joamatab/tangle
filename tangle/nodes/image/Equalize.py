@@ -16,19 +16,23 @@ class Equalize(ImageNode):
 
 
     def compute(self, force=False):
-        if self.input_image.is_connected():
-            self.input_image.fetch_connected_value()
-            self.input_mask.fetch_connected_value()
+        if not self.input_image.is_connected():
+            return
+        self.input_image.fetch_connected_value()
+        self.input_mask.fetch_connected_value()
 
-            if self.input_mask.get_value() is None:
-                equalize = ImageOps.equalize(self.input_image.get_value())
-            else:
-                equalize = ImageOps.equalize(self.input_image.get_value(), self.input_mask.get_value())
+        equalize = (
+            ImageOps.equalize(self.input_image.get_value())
+            if self.input_mask.get_value() is None
+            else ImageOps.equalize(
+                self.input_image.get_value(), self.input_mask.get_value()
+            )
+        )
 
-            self.output_image.set_value(equalize)
+        self.output_image.set_value(equalize)
 
-            contrasted_pixmap = ImageQt.toqpixmap(equalize)
-            self.set_pixmap(contrasted_pixmap)
-            self.refresh()
-            super().compute(force=force)
-            self.set_dirty(False)
+        contrasted_pixmap = ImageQt.toqpixmap(equalize)
+        self.set_pixmap(contrasted_pixmap)
+        self.refresh()
+        super().compute(force=force)
+        self.set_dirty(False)

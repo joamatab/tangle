@@ -66,9 +66,7 @@ class NodeSocket(QGraphicsEllipseItem):
     def fetch_connected_value(self):
         if self.is_connected():
             if self.socket_type.accept_multiple:
-                values_list = []
-                for socket in self.get_connected_sockets():
-                    values_list.append(socket.get_value())
+                values_list = [socket.get_value() for socket in self.get_connected_sockets()]
             else:
                 socket = self.get_connected_sockets()[0]
                 value = socket.get_value()
@@ -83,8 +81,7 @@ class NodeSocket(QGraphicsEllipseItem):
         :param save_value: [bool]  if set to yes, the value of the socket will also be saved if the socket type allows it
         :return: a dictionary with the serialized data
         """
-        save_dict = {}
-        save_dict["label"] = self.label.toPlainText()
+        save_dict = {"label": self.label.toPlainText()}
         save_dict["socket_type"] = str(self.socket_type)
         save_dict["io"] = self.io
         if save_value and self.socket_type.get_value_saveable():
@@ -94,9 +91,7 @@ class NodeSocket(QGraphicsEllipseItem):
         return save_dict
 
     def get_uuid(self, as_string=False):
-        if as_string:
-            return str(self.__uuid)
-        return self.__uuid
+        return str(self.__uuid) if as_string else self.__uuid
 
     def get_center_point(self):
         if self.io == IO.input:
@@ -116,9 +111,7 @@ class NodeSocket(QGraphicsEllipseItem):
         return connected_sockets
 
     def is_connected(self):
-        if len(self.get_connected_sockets()) > 0:
-            return True
-        return False
+        return len(self.get_connected_sockets()) > 0
 
     def is_connected_to(self, node_socket):
         for connection in self.connections:
@@ -132,11 +125,10 @@ class NodeSocket(QGraphicsEllipseItem):
             self.label.font.setBold(True)
             self.label.font.setItalic(True)
             self.label.setDefaultTextColor(self.socket_type.color)
-        else:
-            if len(self.get_connected_sockets()) == 0:
-                self.label.font.setBold(False)
-                self.label.font.setItalic(False)
-                self.label.setDefaultTextColor(Colors.text_default)
+        elif len(self.get_connected_sockets()) == 0:
+            self.label.font.setBold(False)
+            self.label.font.setItalic(False)
+            self.label.setDefaultTextColor(Colors.text_default)
         self.label.draw()
 
     def get_node(self):
@@ -188,14 +180,10 @@ class NodeSocket(QGraphicsEllipseItem):
         return self.name
 
     def is_input(self):
-        if self.io == IO.input:
-            return True
-        return False
+        return self.io == IO.input
 
     def is_output(self):
-        if self.io == IO.output:
-            return True
-        return False
+        return self.io == IO.output
 
     def mousePressEvent(self, event):
         self.connection_start_point = event.scenePos()
@@ -228,36 +216,45 @@ class NodeSocket(QGraphicsEllipseItem):
                 utils.trace(err)
                 return
 
-        # we've released the mouse button where there is no socket
-        else:
-            if event.button() == Qt.LeftButton:
-                Logger().warning("Released at %s, there is no socket here" % self.connection_end_point)
+        elif event.button() == Qt.LeftButton:
+            Logger().warning(
+                f"Released at {self.connection_end_point}, there is no socket here"
+            )
 
-            elif event.button() == Qt.RightButton:
-                x = event.screenPos().x()
-                y = event.screenPos().y()
 
-                widget = QComboBox()
-                widget.blockSignals(True)
-                widget.activated.connect(partial(self.add_new_node,
-                                                           widget,
-                                                           self,
-                                                           event.scenePos().x() - nc.node_item_width / 2,
-                                                           event.scenePos().y() - nc.node_item_height / 2))
-                widget.resize(180, 20)
-                self.scene.spawn_widget_at(widget, x, y)
+        elif event.button() == Qt.RightButton:
+            x = event.screenPos().x()
+            y = event.screenPos().y()
 
-                connectable_nodes = []
-                connectable_nodes.append("debug.Debug")
-                if socket_01.is_input():
-                    for node_dict in node_db.get_node_dicts_with_output_of_type(socket_01.socket_type.name):
-                        connectable_nodes.append("%s.%s" % (node_dict.get("module"), node_dict.get("name")))
-                if socket_01.is_output():
-                    for node_dict in node_db.get_node_dicts_with_input_of_type(socket_01.socket_type.name):
-                        connectable_nodes.append("%s.%s" % (node_dict.get("module"), node_dict.get("name")))
+            widget = QComboBox()
+            widget.blockSignals(True)
+            widget.activated.connect(partial(self.add_new_node,
+                                                       widget,
+                                                       self,
+                                                       event.scenePos().x() - nc.node_item_width / 2,
+                                                       event.scenePos().y() - nc.node_item_height / 2))
+            widget.resize(180, 20)
+            self.scene.spawn_widget_at(widget, x, y)
 
-                qt_utils.combo_box.add_items(widget, connectable_nodes)
-                widget.blockSignals(False)
+            connectable_nodes = ["debug.Debug"]
+            if socket_01.is_input():
+                connectable_nodes.extend(
+                    f'{node_dict.get("module")}.{node_dict.get("name")}'
+                    for node_dict in node_db.get_node_dicts_with_output_of_type(
+                        socket_01.socket_type.name
+                    )
+                )
+
+            if socket_01.is_output():
+                connectable_nodes.extend(
+                    f'{node_dict.get("module")}.{node_dict.get("name")}'
+                    for node_dict in node_db.get_node_dicts_with_input_of_type(
+                        socket_01.socket_type.name
+                    )
+                )
+
+            qt_utils.combo_box.add_items(widget, connectable_nodes)
+            widget.blockSignals(False)
 
     def add_new_node(self, combobox, socket, pos_x, pos_y, _):
         module, class_name = combobox.currentText().split(".")
@@ -305,10 +302,7 @@ class NodeSocket(QGraphicsEllipseItem):
         super().paint(painter, option, widget)
 
     def __is_output_connected_to_input(self, node_socket):
-        if not node_socket.io == self.io:
-            return True
-        else:
-            return False
+        return node_socket.io != self.io
 
     # def __is_valid_connection(self, input_socket):
     #     valid = True

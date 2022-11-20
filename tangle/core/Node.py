@@ -165,9 +165,7 @@ class Node(QGraphicsRectItem):
         self.reposition_title()
 
     def get_uuid(self, as_string=False):
-        if as_string:
-            return str(self.__uuid)
-        return self.__uuid
+        return str(self.__uuid) if as_string else self.__uuid
 
     def set_uuid(self, new_uuid):
         if type(new_uuid) == str:
@@ -178,10 +176,14 @@ class Node(QGraphicsRectItem):
     def get_socket_by_uuid(self, search_uuid):
         if type(search_uuid) == str:
             search_uuid = uuid.UUID(search_uuid)
-        for socket in self.get_all_sockets():
-            if socket.get_uuid() == search_uuid:
-                return socket
-        return None
+        return next(
+            (
+                socket
+                for socket in self.get_all_sockets()
+                if socket.get_uuid() == search_uuid
+            ),
+            None,
+        )
 
     def get_all_sockets(self):
         return self.__output_sockets + self.__input_sockets
@@ -193,28 +195,21 @@ class Node(QGraphicsRectItem):
         return self.__output_sockets
 
     def get_all_connected_sockets(self):
-        connected_sockets = []
-        for socket in self.get_all_sockets():
-            if socket.is_connected():
-                connected_sockets.append(socket)
-
-        return connected_sockets
+        return [socket for socket in self.get_all_sockets() if socket.is_connected()]
 
     def get_connected_input_sockets(self):
-        connected_sockets = []
-        for socket in self.get_all_input_sockets():
-            if socket.is_connected():
-                connected_sockets.append(socket)
-
-        return connected_sockets
+        return [
+            socket
+            for socket in self.get_all_input_sockets()
+            if socket.is_connected()
+        ]
 
     def get_connected_output_sockets(self):
-        connected_sockets = []
-        for socket in self.get_all_output_sockets():
-            if socket.is_connected():
-                connected_sockets.append(socket)
-
-        return connected_sockets
+        return [
+            socket
+            for socket in self.get_all_output_sockets()
+            if socket.is_connected()
+        ]
 
     def get_connected_input_nodes(self):
         connected_input_nodes = []
@@ -263,64 +258,57 @@ class Node(QGraphicsRectItem):
         return connected_input_nodes
 
     def is_child_of(self, parent_node, recursive=True):
-        if recursive:
-            if self in parent_node.get_connected_input_nodes_recursive():
-                return True
-            return False
-        else:
-            if self in parent_node.get_connected_input_nodes():
-                return True
-            return False
+        return bool(
+            recursive
+            and self in parent_node.get_connected_input_nodes_recursive()
+            or not recursive
+            and self in parent_node.get_connected_input_nodes()
+        )
 
     def is_parent_of(self, child_node, recursive=True):
-        if recursive:
-            if self in child_node.get_connected_output_nodes_recursive():
-                return True
-            return False
-        else:
-            if self in child_node.get_connected_output_nodes():
-                return True
-            return False
+        return bool(
+            recursive
+            and self in child_node.get_connected_output_nodes_recursive()
+            or not recursive
+            and self in child_node.get_connected_output_nodes()
+        )
 
     def get_input_nodes_of_type(self, node_type):
-        for node in self.get_connected_input_nodes():
-            if type(node) == node_type:
-                return node
-        return None
+        return next(
+            (
+                node
+                for node in self.get_connected_input_nodes()
+                if type(node) == node_type
+            ),
+            None,
+        )
 
     def get_output_nodes_of_type(self, node_type):
-        for node in self.get_connected_output_nodes():
-            if type(node) == node_type:
-                return node
-        return None
+        return next(
+            (
+                node
+                for node in self.get_connected_output_nodes()
+                if type(node) == node_type
+            ),
+            None,
+        )
 
     def get_input_socket_types(self):
-        input_socket_types = []
-        for socket in self.get_all_input_sockets():
-            input_socket_types.append(socket.socket_type)
-        return input_socket_types
+        return [socket.socket_type for socket in self.get_all_input_sockets()]
 
     def get_output_socket_types(self):
-        output_socket_types = []
-        for socket in self.get_all_output_sockets():
-            output_socket_types.append(socket.socket_type)
-        return output_socket_types
+        return [socket.socket_type for socket in self.get_all_output_sockets()]
 
     def get_all_socket_types(self):
-        all_socket_types = []
-        for socket in self.get_all_sockets():
-            all_socket_types.append(socket.socket_type)
-        return all_socket_types
+        return [socket.socket_type for socket in self.get_all_sockets()]
 
     def destroy_self(self):
         all_connections = []
 
         for socket in self.get_all_sockets():
-            for connection in socket.connections:
-                all_connections.append(connection)
-
+            all_connections.extend(iter(socket.connections))
         for connection in all_connections:
-            logging.info("Destroying %s" % connection)
+            logging.info(f"Destroying {connection}")
             connection.destroy_self()
 
         self.scene.removeItem(self)
@@ -330,9 +318,7 @@ class Node(QGraphicsRectItem):
         all_connections = []
 
         for socket in all_sockets:
-            for connection in socket.connections:
-                all_connections.append(connection)
-
+            all_connections.extend(iter(socket.connections))
         return all_connections
 
     def get_socket(self, socket_name, input_output):

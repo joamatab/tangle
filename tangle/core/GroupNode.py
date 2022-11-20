@@ -55,9 +55,7 @@ class GroupNode(QGraphicsRectItem):
         return self.__nodes
 
     def get_uuid(self, as_string=False):
-        if as_string:
-            return str(self.__uuid)
-        return self.__uuid
+        return str(self.__uuid) if as_string else self.__uuid
 
     def set_color(self, color):
         self.__color = color
@@ -115,10 +113,17 @@ class GroupNode(QGraphicsRectItem):
         self.update()
 
     def save(self):
-        group_node_dict = {}
-        group_node_dict["x"] = self.x
-        group_node_dict["y"] = self.y
-        group_node_dict["color"] = [self.get_color().red(), self.get_color().green(), self.get_color().blue(), self.get_color().alpha()]
+        group_node_dict = {
+            "x": self.x,
+            "y": self.y,
+            "color": [
+                self.get_color().red(),
+                self.get_color().green(),
+                self.get_color().blue(),
+                self.get_color().alpha(),
+            ],
+        }
+
         group_node_dict["uuid"] = self.get_uuid(as_string=True)
         group_node_dict["nodes"] = [node.get_uuid(as_string=True) for node in self.get_nodes()]
         group_node_dict["class_name"] = "GroupNode"

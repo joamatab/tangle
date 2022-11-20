@@ -68,11 +68,7 @@ class NodeScene(QGraphicsScene):
 
         :return: [list] GroupNode
         """
-        group_nodes = []
-        for item in self.items():
-            if type(item) == GroupNode:
-                group_nodes.append(item)
-        return group_nodes
+        return [item for item in self.items() if type(item) == GroupNode]
 
     def get_all_nodes(self):
         """
@@ -80,12 +76,7 @@ class NodeScene(QGraphicsScene):
 
         :return: [list] BaseNode
         """
-        nodes = []
-        for item in self.items():
-            if issubclass(type(item), BaseNode):
-                nodes.append(item)
-
-        return nodes
+        return [item for item in self.items() if issubclass(type(item), BaseNode)]
 
     def get_all_connections(self):
         """
@@ -93,11 +84,7 @@ class NodeScene(QGraphicsScene):
 
         :return: [list] SocketConnection
         """
-        connections = []
-        for item in self.items():
-            if type(item) == SocketConnection:
-                connections.append(item)
-        return connections
+        return [item for item in self.items() if type(item) == SocketConnection]
 
     def get_node_by_name(self, name):
         """
@@ -106,10 +93,9 @@ class NodeScene(QGraphicsScene):
         :param name: [string] name to search for
         :return: [BaseNode] with the given name as title or [None]
         """
-        for node in self.get_all_nodes():
-            if node.title == name:
-                return node
-        return None
+        return next(
+            (node for node in self.get_all_nodes() if node.title == name), None
+        )
 
     def get_node_by_uuid(self, search_uuid):
         """
@@ -120,10 +106,14 @@ class NodeScene(QGraphicsScene):
         """
         if type(search_uuid) == str:
             search_uuid = uuid.UUID(search_uuid)
-        for node in self.get_all_nodes():
-            if node.get_uuid() == search_uuid:
-                return node
-        return None
+        return next(
+            (
+                node
+                for node in self.get_all_nodes()
+                if node.get_uuid() == search_uuid
+            ),
+            None,
+        )
 
     def get_socket_by_uuid(self, search_uuid):
         """
@@ -166,7 +156,7 @@ class NodeScene(QGraphicsScene):
         try:
             if node is None:
                 for begin_node in self.get_begin_nodes():
-                    logging.info("computing begin node %s " % begin_node)
+                    logging.info(f"computing begin node {begin_node} ")
                     begin_node.set_dirty(True)
                     begin_node.compute(force=True)
             else:
@@ -187,10 +177,7 @@ class NodeScene(QGraphicsScene):
         :return: [dict] if to_memory is set to True
         """
         try:
-            save_dict = {}
-            save_dict["nodes"] = {}
-            save_dict["group_nodes"] = {}
-
+            save_dict = {"nodes": {}, "group_nodes": {}}
             if selected_nodes_only:
                 nodes = self.get_selected_nodes()
                 group_nodes = self.get_selected_group_nodes()
@@ -317,31 +304,34 @@ class NodeScene(QGraphicsScene):
                                group_node_dict.get("color")[1],
                                group_node_dict.get("color")[2],
                                group_node_dict.get("color")[3])
-                nodes = []
-                for node_uuid in group_node_dict.get("nodes"):
-                    nodes.append(self.get_node_by_uuid(node_uuid))
+                nodes = [
+                    self.get_node_by_uuid(node_uuid)
+                    for node_uuid in group_node_dict.get("nodes")
+                ]
+
                 group_node = GroupNode(self, nodes)
                 group_node.set_color(color)
 
     def align_selected_nodes(self, axis):
-        if len(self.get_selected_nodes()) > 0:
-            if axis == "horizontal_up":
-                y_pos = min([node.pos().y() for node in self.get_selected_nodes()])
-                for node in self.get_selected_nodes():
-                    node.setPos(node.pos().x(), y_pos)
-            if axis == "horizontal_down":
-                y_pos = max([node.pos().y() for node in self.get_selected_nodes()])
-                for node in self.get_selected_nodes():
-                    node.setPos(node.pos().x(), y_pos)
+        if len(self.get_selected_nodes()) <= 0:
+            return
+        if axis == "horizontal_up":
+            y_pos = min(node.pos().y() for node in self.get_selected_nodes())
+            for node in self.get_selected_nodes():
+                node.setPos(node.pos().x(), y_pos)
+        if axis == "horizontal_down":
+            y_pos = max(node.pos().y() for node in self.get_selected_nodes())
+            for node in self.get_selected_nodes():
+                node.setPos(node.pos().x(), y_pos)
 
-            if axis == "vertical_left":
-                x_pos = min([node.pos().x() for node in self.get_selected_nodes()])
-                for node in self.get_selected_nodes():
-                    node.setPos(x_pos, node.pos().y())
-            if axis == "vertical_right":
-                x_pos = max([node.pos().x() for node in self.get_selected_nodes()])
-                for node in self.get_selected_nodes():
-                    node.setPos(x_pos, node.pos().y())
+        if axis == "vertical_left":
+            x_pos = min(node.pos().x() for node in self.get_selected_nodes())
+            for node in self.get_selected_nodes():
+                node.setPos(x_pos, node.pos().y())
+        if axis == "vertical_right":
+            x_pos = max(node.pos().x() for node in self.get_selected_nodes())
+            for node in self.get_selected_nodes():
+                node.setPos(x_pos, node.pos().y())
 
     def duplicate_nodes(self):
         """
@@ -369,9 +359,11 @@ class NodeScene(QGraphicsScene):
 
         if len(all_nodes) > 1:
             for node in all_nodes:
-                if len(node.get_connected_output_sockets()) > 0:
-                    if len(node.get_connected_input_sockets()) == 0:
-                        start_nodes.append(node)
+                if (
+                    len(node.get_connected_output_sockets()) > 0
+                    and len(node.get_connected_input_sockets()) == 0
+                ):
+                    start_nodes.append(node)
 
                 if len(node.get_connected_input_sockets()) + len(node.get_connected_output_sockets()) == 0:
                     start_nodes.append(node)
@@ -392,9 +384,11 @@ class NodeScene(QGraphicsScene):
 
         if len(all_nodes) > 1:
             for node in all_nodes:
-                if len(node.get_connected_input_sockets()) > 0:
-                    if len(node.get_connected_output_sockets()) == 0:
-                        end_nodes.append(node)
+                if (
+                    len(node.get_connected_input_sockets()) > 0
+                    and len(node.get_connected_output_sockets()) == 0
+                ):
+                    end_nodes.append(node)
 
                 if len(node.get_connected_input_sockets()) + len(node.get_connected_output_sockets()) == 0:
                     end_nodes.append(node)
@@ -428,10 +422,13 @@ class NodeScene(QGraphicsScene):
         for item in items:
             try:
                 item.destroy_self()
-                if type(item) == GroupNode:
+                if (
+                    type(item) == GroupNode
+                    and EZSettings().get(ns.chk_delete_nodes_with_group_node, True)
+                    is True
+                ):
                     group_node = item
-                    if EZSettings().get(ns.chk_delete_nodes_with_group_node, True) is True:
-                        group_node.destroy_nodes()
+                    group_node.destroy_nodes()
 
             except Exception as err:
                 utils.trace(err)
@@ -473,7 +470,7 @@ class NodeScene(QGraphicsScene):
         file_path = QFileDialog.getSaveFileName(caption="Save Tangle network", filter="Tangle files (*.tngl)")[0]
         if file_path != "":
             if not file_path.endswith(".tngl"):
-                file_path = file_path + ".tngl"
+                file_path = f"{file_path}.tngl"
             if selected_nodes_only:
                 self.save_network(selected_nodes_only=True, file_path=file_path)
             else:
@@ -528,7 +525,7 @@ class NodeScene(QGraphicsScene):
         if event.key() == Qt.Key_S and event.modifiers() == Qt.ControlModifier:
             self.browse_for_save_location()
 
-        if event.key() == Qt.Key_Enter or event.key() == Qt.Key_Return:
+        if event.key() in [Qt.Key_Enter, Qt.Key_Return]:
             self.refresh_network()
 
         if event.key() == Qt.Key_F5:

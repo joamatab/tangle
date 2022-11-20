@@ -59,23 +59,28 @@ class SocketConnection(QGraphicsPathItem):
     def check_validity(self):
         error_message = None
 
-        if self.output_socket.socket_type.name != self.input_socket.socket_type.name:
-            if self.input_socket.socket_type.name != "debug" and self.input_socket.socket_type.name != "list":
-                error_message = "Output socket type (%s) doesn't match input socket type (%s)" % \
+        if (
+            self.output_socket.socket_type.name
+            != self.input_socket.socket_type.name
+            and self.input_socket.socket_type.name not in ["debug", "list"]
+        ):
+            error_message = "Output socket type (%s) doesn't match input socket type (%s)" % \
                                 (self.output_socket.socket_type.name, self.input_socket.socket_type.name)
 
         if self.output_socket.name == self.input_socket.name and self.output_socket.parentItem() == self.input_socket.parentItem():
             error_message = "Can't connect to the same socket %s -> %s" % (self.output_socket.name, self.input_socket.name)
 
         if self.input_socket == self.output_socket:
-            error_message = "Output socket (%s) is the same as the input socket (%s)" % \
-                                 (self.output_socket.name, self.input_socket.name)
+            error_message = f"Output socket ({self.output_socket.name}) is the same as the input socket ({self.input_socket.name})"
+
 
         if self.output_socket.is_connected_to(self.input_socket):
-            error_message = "%s -> %s is already connected" % (self.output_socket.name, self.input_socket.name)
+            error_message = f"{self.output_socket.name} -> {self.input_socket.name} is already connected"
+
 
         if self.output_socket.io == self.input_socket.io:
-            error_message = "Trying to connect %s to %s" % (self.output_socket.io, self.input_socket.io)
+            error_message = f"Trying to connect {self.output_socket.io} to {self.input_socket.io}"
+
 
         if self.input_socket.is_connected() and self.input_socket.socket_type.accept_multiple == False:
             if self.force_connection:
@@ -85,7 +90,8 @@ class SocketConnection(QGraphicsPathItem):
             error_message = "%s doesn't allow multiple connections" % self.input_socket.name
 
         if self.input_socket.get_node().is_child_of(self.output_socket.get_node()):
-            error_message = "%s is an input of %s" % (self.input_socket.get_node(), self.output_socket.get_node())
+            error_message = f"{self.input_socket.get_node()} is an input of {self.output_socket.get_node()}"
+
 
         if self.input_socket.get_node() == self.output_socket.get_node():
             error_message = "Trying to connect to the same node!"
@@ -187,6 +193,4 @@ class SocketConnection(QGraphicsPathItem):
         self.setPen(pen)
 
     def __str__(self):
-        return "SOCKETCONNECTION: %s.%s -> %s.%s" % \
-               (self.output_socket.get_node(), self.output_socket.name,
-                self.input_socket.get_node(), self.input_socket.name)
+        return f"SOCKETCONNECTION: {self.output_socket.get_node()}.{self.output_socket.name} -> {self.input_socket.get_node()}.{self.input_socket.name}"
