@@ -27,7 +27,7 @@ class Rotate(ImageNode):
 
             degrees_to_rotate = int(self.cd_degrees.currentText())
             if not self.chk_counter_clockwise.isChecked():
-                degrees_to_rotate = degrees_to_rotate * -1
+                degrees_to_rotate *= -1
 
             rotated = rotated.rotate(degrees_to_rotate, expand=True)
 

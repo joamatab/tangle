@@ -55,9 +55,8 @@ class BaseSocketType(QObject):
         if type(value) == np.ndarray:
             if np.all(value) == np.all(self.value):
                 return
-        else:
-            if self.value == value:
-                return
+        elif self.value == value:
+            return
 
         self.value = value
         # self.is_dirty.emit()
@@ -202,10 +201,7 @@ class EnumSocketType(BaseSocketType):
         self.combobox = QComboBox()
         self.combobox.currentIndexChanged.connect(self.enter_value)
 
-        self.__value_dictionary = {}
-        self.__value_dictionary["index"] = 0
-        self.__value_dictionary["options"] = options
-
+        self.__value_dictionary = {"index": 0, "options": options}
         self.set_value(self.__value_dictionary)
         self.set_initial_value(self.__value_dictionary)
 

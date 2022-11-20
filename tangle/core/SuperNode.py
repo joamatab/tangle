@@ -27,5 +27,5 @@ class SuperNode(Node):
         return outputs
 
     def reparent_sockets(self):
-        for node in self.get_input_sockets():
+        for _ in self.get_input_sockets():
             pass

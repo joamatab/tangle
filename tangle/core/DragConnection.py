@@ -54,9 +54,7 @@ class DragConnection(QGraphicsPathItem):
         x2 = point2.x()
         y2 = point2.y()
 
-        distance = math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
-
-        return distance
+        return math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
 
     def __draw(self):
         #self.setFlag(QGraphicsItem.ItemIsSelectable)

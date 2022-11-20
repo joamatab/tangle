@@ -39,7 +39,7 @@ class NodeTree(QWidget, node_tree_ui.Ui_Form):
 
                 hidden = False
                 for word in search_words:
-                    if not word in item.text(0).lower():
+                    if word not in item.text(0).lower():
                         hidden = True
 
                 item.setHidden(hidden)
@@ -47,13 +47,17 @@ class NodeTree(QWidget, node_tree_ui.Ui_Form):
     def load_node_tree(self):
         self.tree_nodes.clear()
         for file_path in file_utils.get_files_recursively(NODE_FOLDER, filters=".py"):
-            if file_path is not None and not "__" in file_path and not file_path.endswith("pyc"):
+            if (
+                file_path is not None
+                and "__" not in file_path
+                and not file_path.endswith("pyc")
+            ):
                 file_name = os.path.basename(file_path)
                 file_name_no_ext = os.path.splitext(file_name)[0]
-                icon_path = os.path.join(ICONS_PATH, file_name_no_ext + ".png")
+                icon_path = os.path.join(ICONS_PATH, f"{file_name_no_ext}.png")
                 complete_folder = os.path.dirname(file_path)
                 folder_name = complete_folder.split(os.sep)[-1]
-                parent_folder = os.sep.join(complete_folder.split(os.sep)[0:-1])
+                parent_folder = os.sep.join(complete_folder.split(os.sep)[:-1])
                 parent_folder_name = parent_folder.split(os.sep)[-1]
                 complete_path = os.path.join(complete_folder, file_name).replace("\\", "/")
 

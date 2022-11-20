@@ -52,9 +52,7 @@ class MaskColor(ImageNode):
     def clamp(self, min_val, max_val, value):
         if value <= min_val:
             return min_val
-        if value >= max_val:
-            return max_val
-        return value
+        return max_val if value >= max_val else value
 
     def compute(self, compute_next=True, force=False):
         if self.input_image.is_connected():

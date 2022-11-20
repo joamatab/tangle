@@ -29,21 +29,20 @@ class ManualComputeExample(BaseNode):
 
     @timeit
     def compute(self, force=False):
-        if not self.get_auto_compute_on_connect() and force:
-            if self.is_dirty():
-                result = 0.0
+        if not self.get_auto_compute_on_connect() and force and self.is_dirty():
+            result = 0.0
 
-                for each in self.inputs:
-                    each.fetch_connected_value()
-                    input_value = each.get_value()
+            for each in self.inputs:
+                each.fetch_connected_value()
+                input_value = each.get_value()
 
-                    result += input_value
+                result += input_value
 
-                self.output_float.set_value(result)
-                self.lbl_result.setText(str(result))
+            self.output_float.set_value(result)
+            self.lbl_result.setText(str(result))
 
-                self.set_dirty(False)
+            self.set_dirty(False)
 
-                self.title.setPlainText(str(result))
-                self.reposition_title()
-                super().compute(force=force)
+            self.title.setPlainText(str(result))
+            self.reposition_title()
+            super().compute(force=force)

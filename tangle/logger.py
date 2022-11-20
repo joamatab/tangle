@@ -11,10 +11,10 @@ class Status:
 
 class Singleton(type):
     _instances = {}
-    def __call__(cls, *args, **kwargs):
-        if cls not in cls._instances:
-            cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
-        return cls._instances[cls]
+    def __call__(self, *args, **kwargs):
+        if self not in self._instances:
+            self._instances[self] = super(Singleton, self).__call__(*args, **kwargs)
+        return self._instances[self]
 
 
 class Logger(object, metaclass=Singleton):
@@ -43,7 +43,7 @@ class Logger(object, metaclass=Singleton):
 
     def __add_to_log(self, status, message, show_in_info_label):
         time = datetime.datetime.now().strftime("%Y/%m/%d-%H:%M:%S")
-        line = "[%s] | %s | %s" % (time, status, message)
+        line = f"[{time}] | {status} | {message}"
 
         with open(self.file_path, "a") as out_file:
             out_file.write(line + "\n")
